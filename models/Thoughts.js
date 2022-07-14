@@ -1,57 +1,75 @@
+// Require Mongoos and Moment
 const { Schema, model, Types } = require('mongoose');
-const dateFormat = require('../utils/dateFormat');
+const moment = require('moment');
 
+// ReactionsSchema
+const ReactionsSchema = new Schema(
+    {
+    // Set custom ID 
+    reactionId: {
+        type: Schema.Types.ObjectId,
+        default: ()=> new Types.ObjectId()
+    },
+    reactionBody: {
+        type: String,
+        required: true,
+        maxlength: 280
+    },
+    username: {
+        type: String,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        get: (createdAtVal) => moment(createdAtVal).format('MMM DD, YYYY [at] hh:mm a')
+    }
+    },
+    {
+    toJSON: {
+        getters: true
+    } 
+    }
+);
+
+// ThoughtsSchema
 const ThoughtsSchema = new Schema(
     {
-        thoughtText: {
-            type: String,
-            required: true,
-            len: (1 - 280)
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now,
-            get: createdAtVal => dateFormat(createdAtVal)
-        },
-        username: {
-            type: String,
-            required: true
-        },
-        friends: [
-            {
-            type: Schema.Types.ObjectId,
-            ref: 'Reactions'
-            }
-        ]
-    }
-);
-
-ReactionSchema.virtual('reactionCount').get(function(){
-    return this.reactions.length;
-})
-
-const ReactionSchema = new Schema(
+    thoughtText: {
+        type: String,
+        required: true,
+        minlength: 1,
+        maxlength: 280
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        // Moment
+        get: (createdAtVal) => moment(createdAtVal).format('MMM DD, YYYY [at] hh:mm a')
+    },
+    username: {
+        type: String,
+        required: true
+    },
+    // Use ReactionsSchema to validate data
+    reactions: [ReactionsSchema]
+    },
     {
-        reactionId: {
-            type: Schema.Types.ObjectId,
-            default: 0
-        },
-        reactionBody: {
-            type: String,
-            required: true,
-            max: 280
-        },
-        username: {
-            type: String,
-            required: true
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now,
-            getter: true
-        }
+    toJSON: {
+        virtuals: true,
+        getters: true
+    },
+    id: false
     }
-);
+)
+
+// get total count of reactions
+ThoughtsSchema.virtual('reactionCount').get(function() {
+    return this.reactions.length;
+});
+
+// create the Thoughts model using the Thoughts Schema
 const Thoughts = model('Thoughts', ThoughtsSchema);
 
+// Export Thoughts Module
 module.exports = Thoughts;
